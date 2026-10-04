@@ -1,0 +1,22 @@
+grafana:
+  adminPassword: admin  # lab only
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki-gateway.monitoring.svc
+    - name: Tempo
+      type: tempo
+      url: http://tempo.monitoring.svc:3100
+prometheus:
+  prometheusSpec:
+    retention: 3d
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    enableRemoteWriteReceiver: true
+alertmanager:
+  enabled: true

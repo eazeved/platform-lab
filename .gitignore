@@ -1,0 +1,11 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+.terragrunt-cache/
+*.tfplan
+crash.log
+.env
+bin/
+dist/
+kubeconfig*
+.DS_Store

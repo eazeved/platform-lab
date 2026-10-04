@@ -1,0 +1,34 @@
+# Hand-written starter (multi-window, multi-burn-rate). Replace with `sloth generate` output.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: demo-slo
+  namespace: monitoring
+spec:
+  groups:
+    - name: demo-slo-sli
+      rules:
+        - record: slo:demo_error_ratio:rate5m
+          expr: sum(rate(http_requests_total{job="demo",code=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total{job="demo"}[5m])), 1e-9)
+        - record: slo:demo_error_ratio:rate1h
+          expr: sum(rate(http_requests_total{job="demo",code=~"5.."}[1h])) / clamp_min(sum(rate(http_requests_total{job="demo"}[1h])), 1e-9)
+        - record: slo:demo_error_ratio:rate30m
+          expr: sum(rate(http_requests_total{job="demo",code=~"5.."}[30m])) / clamp_min(sum(rate(http_requests_total{job="demo"}[30m])), 1e-9)
+        - record: slo:demo_error_ratio:rate6h
+          expr: sum(rate(http_requests_total{job="demo",code=~"5.."}[6h])) / clamp_min(sum(rate(http_requests_total{job="demo"}[6h])), 1e-9)
+    - name: demo-slo-alerts
+      rules:
+        # objective 99.5% => budget 0.005
+        - alert: DemoErrorBudgetFastBurn
+          expr: slo:demo_error_ratio:rate1h > (14.4 * 0.005) and slo:demo_error_ratio:rate5m > (14.4 * 0.005)
+          for: 2m
+          labels: {severity: critical}
+          annotations:
+            summary: "demo burning error budget 14.4x (2% of 30d budget in 1h)"
+            runbook_url: https://github.com/eazeved/platform-lab/blob/main/runbooks/high-error-rate.md
+        - alert: DemoErrorBudgetSlowBurn
+          expr: slo:demo_error_ratio:rate6h > (6 * 0.005) and slo:demo_error_ratio:rate30m > (6 * 0.005)
+          for: 15m
+          labels: {severity: warning}
+          annotations:
+            summary: "demo burning error budget 6x (5% of 30d budget in 6h)"

@@ -1,0 +1,10 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: demo
+spec:
+  podSelector:
+    matchLabels: {{- include "demo.selector" . | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - ports: [{port: 8080}]

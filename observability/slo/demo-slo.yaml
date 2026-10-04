@@ -1,0 +1,36 @@
+# Source of truth for SLOs. Generate PrometheusRules with:
+#   sloth generate -i observability/slo/demo-slo.yaml -o observability/slo/generated/demo-slo-rules.yaml
+version: prometheus/v1
+service: demo
+labels:
+  owner: platform
+slos:
+  - name: availability
+    objective: 99.5
+    description: 99.5% of HTTP requests are not 5xx over 30d.
+    sli:
+      events:
+        error_query: sum(rate(http_requests_total{job="demo",code=~"5.."}[{{.window}}]))
+        total_query: sum(rate(http_requests_total{job="demo"}[{{.window}}]))
+    alerting:
+      name: DemoHighErrorBudgetBurn
+      page_alert:
+        labels: {severity: critical}
+      ticket_alert:
+        labels: {severity: warning}
+  - name: latency
+    objective: 99
+    description: 99% of requests faster than 300ms.
+    sli:
+      events:
+        error_query: |
+          sum(rate(http_request_duration_seconds_count{job="demo"}[{{.window}}]))
+          -
+          sum(rate(http_request_duration_seconds_bucket{job="demo",le="0.3"}[{{.window}}]))
+        total_query: sum(rate(http_request_duration_seconds_count{job="demo"}[{{.window}}]))
+    alerting:
+      name: DemoLatencyBudgetBurn
+      page_alert:
+        labels: {severity: critical}
+      ticket_alert:
+        labels: {severity: warning}

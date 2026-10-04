@@ -1,0 +1,43 @@
+name: terraform
+on:
+  pull_request:
+    paths: ["infra/**"]
+  schedule:
+    - cron: "0 9 * * 1"   # weekly drift detection (enable after AWS OIDC is set up)
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [vpc, eks, budget, github-oidc]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+        working-directory: infra
+      - run: terraform init -backend=false && terraform validate
+        working-directory: infra/modules/${{ matrix.module }}
+      - if: matrix.module == 'vpc'
+        run: terraform test
+        working-directory: infra/modules/vpc
+      - uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: infra/modules/${{ matrix.module }}
+          soft_fail: true
+
+  # Uncomment after applying infra/modules/github-oidc and setting AWS_ROLE_ARN repo variable.
+  # plan:
+  #   needs: validate
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: aws-actions/configure-aws-credentials@v4
+  #       with: {role-to-assume: "${{ vars.AWS_ROLE_ARN }}", aws-region: us-east-1}
+  #     - uses: gruntwork-io/terragrunt-action@v2
+  #       with: {tg_dir: infra/live/dev, tg_command: "run --all plan -detailed-exitcode"}

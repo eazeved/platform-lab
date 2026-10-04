@@ -1,0 +1,37 @@
+mode: deployment
+image:
+  repository: otel/opentelemetry-collector-contrib
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc: {endpoint: 0.0.0.0:4317}
+        http: {endpoint: 0.0.0.0:4318}
+  processors:
+    batch: {}
+    memory_limiter:
+      check_interval: 5s
+      limit_percentage: 80
+      spike_limit_percentage: 25
+  exporters:
+    otlp/tempo:
+      endpoint: tempo.monitoring.svc:4317
+      tls: {insecure: true}
+    prometheusremotewrite:
+      endpoint: http://kube-prometheus-stack-prometheus.monitoring.svc:9090/api/v1/write
+    otlphttp/loki:
+      endpoint: http://loki-gateway.monitoring.svc/otlp
+  service:
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, batch]
+        exporters: [otlp/tempo]
+      metrics:
+        receivers: [otlp]
+        processors: [memory_limiter, batch]
+        exporters: [prometheusremotewrite]
+      logs:
+        receivers: [otlp]
+        processors: [memory_limiter, batch]
+        exporters: [otlphttp/loki]

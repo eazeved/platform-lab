@@ -1,0 +1,17 @@
+{{- if not .Values.rollout.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo
+  labels: {{- include "demo.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "demo.selector" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "demo.labels" . | nindent 8 }}
+    spec: {{- include "demo.podSpec" . | nindent 6 }}
+{{- end }}

@@ -1,0 +1,17 @@
+name: lint
+on: [pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint apps/demo/chart
+      - run: helm template apps/demo/chart --set rollout.enabled=true > /dev/null
+      - name: Kyverno policy test
+        run: |
+          curl -sL https://github.com/kyverno/kyverno/releases/download/v1.13.2/kyverno-cli_v1.13.2_linux_x86_64.tar.gz | tar xz kyverno
+          helm template demo apps/demo/chart -n demo > /tmp/demo.yaml
+          ./kyverno apply platform/kyverno-policies/disallow-latest-tag.yaml platform/kyverno-policies/require-requests-limits.yaml --resource /tmp/demo.yaml
+      - uses: ludeeus/action-shellcheck@2.0.0
+        with: {scandir: scripts}

@@ -1,0 +1,18 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pod-security-restricted
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: restricted
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [demo]
+      validate:
+        podSecurity:
+          level: restricted
+          version: latest

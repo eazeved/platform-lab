@@ -1,0 +1,29 @@
+replicaCount: 3
+image:
+  repository: ghcr.io/eazeved/platform-lab/demo
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+# Use Argo Rollouts canary instead of a Deployment
+rollout:
+  enabled: false
+  steps:
+    - setWeight: 20
+    - pause: {duration: 60s}
+    - analysis: {templates: [{templateName: demo-success-rate}]}
+    - setWeight: 50
+    - pause: {duration: 60s}
+env:
+  ERROR_RATE: "0"
+  EXTRA_LATENCY_MS: "0"
+  OTEL_SERVICE_NAME: demo
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector-opentelemetry-collector.monitoring.svc:4317
+resources:
+  requests: {cpu: 50m, memory: 32Mi}
+  limits: {memory: 64Mi}
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPU: 70
+serviceMonitor:
+  enabled: true

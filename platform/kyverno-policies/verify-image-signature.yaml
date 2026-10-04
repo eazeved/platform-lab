@@ -1,0 +1,26 @@
+# Enforces cosign keyless signatures produced by .github/workflows/ci.yaml
+# Audit by default so the local kind flow (unsigned demo:dev) still works.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signature
+spec:
+  validationFailureAction: Audit
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: verify-cosign-keyless
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [demo]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/eazeved/platform-lab/demo*"
+          attestors:
+            - entries:
+                - keyless:
+                    subject: "https://github.com/eazeved/platform-lab/.github/workflows/ci.yaml@refs/heads/main"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev
