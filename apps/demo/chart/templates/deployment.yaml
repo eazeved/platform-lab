@@ -1,4 +1,4 @@
-{{- if not .Values.rollout.enabled }}
+{{- if not (and .Values.rollout.enabled (.Capabilities.APIVersions.Has "argoproj.io/v1alpha1/Rollout")) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
